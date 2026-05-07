@@ -1,4 +1,4 @@
-const port = process.env.PORT || 3000;
+const config = require('../config');
 
 const swaggerSpec = {
   openapi: '3.0.0',
@@ -9,7 +9,7 @@ const swaggerSpec = {
   },
   servers: [
     {
-      url: `http://localhost:${port}`,
+      url: `http://localhost:${config.port}`,
     },
   ],
   paths: {
