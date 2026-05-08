@@ -1,18 +1,19 @@
-const users = require('../database/userDatabase');
+const userRepository = require('../repositories/userRepository');
 const { ApiError } = require('../utils/apiError');
 
 function sanitize(user) {
+  if (!user) return null;
   const { password, ...safe } = user;
   return safe;
 }
 
-function getAllUsers() {
+async function getAllUsers() {
+  const users = await userRepository.findAll();
   return users.map(sanitize);
 }
 
-function getUserById(id) {
-  const userId = Number(id);
-  const user = users.find((item) => item.id === userId);
+async function getUserById(id) {
+  const user = await userRepository.findById(id);
 
   if (!user) {
     throw new ApiError(404, 'User not found');
@@ -21,60 +22,60 @@ function getUserById(id) {
   return sanitize(user);
 }
 
-function createUser(payload) {
-  const { name, email, password } = payload;
+async function findUserRecordByEmail(email) {
+  return userRepository.findByEmail(email);
+}
+
+async function createUser(payload, options = {}) {
+  const { name, email, role = 'user', password } = payload;
 
   if (!name || !email) {
     throw new ApiError(400, 'Name and email are required');
   }
 
-  if (users.find((u) => u.email === email)) {
+  const existing = await userRepository.findByEmail(email);
+  if (existing) {
     throw new ApiError(409, 'Email already in use');
   }
 
-  const nextId = users.length > 0 ? Math.max(...users.map((user) => user.id)) + 1 : 1;
-  const user = { id: nextId, name, email, role: payload.role || 'user' };
+  const data = { name, email, role };
+  if (options.storePassword && password) data.password = password;
 
-  if (password) user.password = password;
-
-  users.push(user);
-  return sanitize(user);
+  const created = await userRepository.create(data);
+  return sanitize(created);
 }
 
-function updateUser(id, payload) {
-  const userId = Number(id);
-  const userIndex = users.findIndex((item) => item.id === userId);
+async function updateUser(id, payload) {
+  const currentUser = await userRepository.findById(id);
 
-  if (userIndex === -1) {
+  if (!currentUser) {
     throw new ApiError(404, 'User not found');
   }
 
-  const currentUser = users[userIndex];
-  const updatedUser = {
-    ...currentUser,
-    ...payload,
-    id: currentUser.id,
-  };
+  if (payload.email && payload.email !== currentUser.email) {
+    const existing = await userRepository.findByEmail(payload.email);
+    if (existing) throw new ApiError(409, 'Email already in use');
+  }
 
-  users[userIndex] = updatedUser;
-  return sanitize(updatedUser);
+  const updated = await userRepository.update(id, payload);
+  if (!updated) throw new ApiError(404, 'User not found');
+  return sanitize(updated);
 }
 
-function deleteUser(id) {
-  const userId = Number(id);
-  const userIndex = users.findIndex((item) => item.id === userId);
+async function deleteUser(id) {
+  const deletedUser = await userRepository.remove(id);
 
-  if (userIndex === -1) {
+  if (!deletedUser) {
     throw new ApiError(404, 'User not found');
   }
 
-  const [deletedUser] = users.splice(userIndex, 1);
   return sanitize(deletedUser);
 }
 
 module.exports = {
   getAllUsers,
   getUserById,
+  findUserRecordByEmail,
   createUser,
   updateUser,
   deleteUser,

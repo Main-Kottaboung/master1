@@ -3,7 +3,7 @@ const config = require('../config');
 const userService = require('../services/userService');
 const { ApiError } = require('../utils/apiError');
 
-function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith('Bearer ')) {
     return next(new ApiError(401, 'Authorization required'));
@@ -12,7 +12,7 @@ function authMiddleware(req, res, next) {
   const token = auth.slice(7);
   try {
     const payload = jwt.verify(token, config.jwtSecret);
-    const user = userService.getUserById(payload.sub);
+    const user = await userService.getUserById(payload.sub);
     req.user = user;
     next();
   } catch (err) {
