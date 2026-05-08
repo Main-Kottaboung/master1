@@ -4,17 +4,16 @@ const userService = require('./userService');
 const config = require('../config');
 const { ApiError } = require('../utils/apiError');
 
-async function register({ name, email, password }) {
+async function register({ name, email, password, role }) {
   if (!name || !email || !password) {
     throw new ApiError(400, 'Name, email and password are required');
   }
 
-  // ensure unique email
-  const existing = userService.getAllUsers().find((u) => u.email === email);
+  const existing = userService.findUserRecordByEmail(email);
   if (existing) throw new ApiError(409, 'Email already in use');
 
   const hashed = await bcrypt.hash(password, 10);
-  const user = userService.createUser({ name, email, password: hashed });
+  const user = userService.createUser({ name, email, password: hashed, role }, { storePassword: true });
 
   const token = jwt.sign({ sub: user.id }, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
 
@@ -26,8 +25,7 @@ async function login({ email, password }) {
     throw new ApiError(400, 'Email and password are required');
   }
 
-  const all = userService.getAllUsers();
-  const userRaw = require('../database/userDatabase').find((u) => u.email === email);
+  const userRaw = userService.findUserRecordByEmail(email);
 
   if (!userRaw || !userRaw.password) {
     throw new ApiError(401, 'Invalid credentials');

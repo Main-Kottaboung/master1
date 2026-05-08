@@ -49,6 +49,35 @@ npm run dev
 npm start
 ```
 
+## Docker
+
+Run the app with Docker or Docker Compose:
+
+```bash
+docker build -t master1-api .
+docker run --env-file .env -p 3000:3000 master1-api
+```
+
+Or use Compose for the app plus a PostgreSQL service scaffold:
+
+```bash
+docker compose up --build
+```
+
+## Environment
+
+Current environment variables include:
+
+- `PORT`
+- `NODE_ENV`
+- `JWT_SECRET`
+- `JWT_EXPIRES_IN`
+- `DATABASE_URL`
+- `DATABASE_NAME`
+- `DATABASE_DIALECT`
+
+The database config is currently a scaffold for future persistent storage.
+
 ## Main endpoints
 
 - Health: `GET /health` or `GET /api/health`
