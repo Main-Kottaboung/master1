@@ -13,6 +13,13 @@ const swaggerSpec = {
     },
   ],
   components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+    },
     schemas: {
       HealthResponse: {
         type: 'object',
@@ -29,6 +36,32 @@ const swaggerSpec = {
           id: { type: 'integer', example: 1 },
           name: { type: 'string', example: 'Alice Johnson' },
           email: { type: 'string', example: 'alice@example.com' },
+          role: { type: 'string', example: 'user' },
+        },
+      },
+      RegisterRequest: {
+        type: 'object',
+        required: ['name', 'email', 'password'],
+        properties: {
+          name: { type: 'string', example: 'Jane Doe' },
+          email: { type: 'string', example: 'jane@example.com' },
+          password: { type: 'string', example: 'secret123' },
+          role: { type: 'string', enum: ['user', 'admin'], example: 'user' },
+        },
+      },
+      LoginRequest: {
+        type: 'object',
+        required: ['email', 'password'],
+        properties: {
+          email: { type: 'string', example: 'jane@example.com' },
+          password: { type: 'string', example: 'secret123' },
+        },
+      },
+      AuthResponse: {
+        type: 'object',
+        properties: {
+          data: { $ref: '#/components/schemas/User' },
+          token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
         },
       },
       CreateUserRequest: {
@@ -37,6 +70,7 @@ const swaggerSpec = {
         properties: {
           name: { type: 'string', example: 'Jane Doe' },
           email: { type: 'string', example: 'jane@example.com' },
+          role: { type: 'string', enum: ['user', 'admin'], example: 'user' },
         },
       },
       UpdateUserRequest: {
@@ -44,6 +78,15 @@ const swaggerSpec = {
         properties: {
           name: { type: 'string', example: 'Jane Doe' },
           email: { type: 'string', example: 'jane@example.com' },
+          role: { type: 'string', enum: ['user', 'admin'], example: 'admin' },
+        },
+      },
+      ErrorResponse: {
+        type: 'object',
+        properties: {
+          status: { type: 'string', example: 'error' },
+          statusCode: { type: 'integer', example: 400 },
+          message: { type: 'string', example: 'Validation failed' },
         },
       },
       ApiResponseUser: {
@@ -102,6 +145,84 @@ const swaggerSpec = {
         },
       },
     },
+    '/api/auth/register': {
+      post: {
+        summary: 'Register a user',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/RegisterRequest' },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Registered successfully',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/AuthResponse' },
+              },
+            },
+          },
+          '400': {
+            description: 'Validation error',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          '409': {
+            description: 'Email already in use',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/auth/login': {
+      post: {
+        summary: 'Login and get a token',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/LoginRequest' },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Authenticated successfully',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/AuthResponse' },
+              },
+            },
+          },
+          '400': {
+            description: 'Validation error',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          '401': {
+            description: 'Invalid credentials',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
     '/api/users': {
       get: {
         summary: 'List users',
@@ -135,6 +256,22 @@ const swaggerSpec = {
               },
             },
           },
+          '400': {
+            description: 'Validation error',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          '409': {
+            description: 'Email already in use',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
         },
       },
     },
@@ -155,6 +292,14 @@ const swaggerSpec = {
             content: {
               'application/json': {
                 schema: { $ref: '#/components/schemas/ApiResponseUser' },
+              },
+            },
+          },
+          '404': {
+            description: 'User not found',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
               },
             },
           },
@@ -179,6 +324,22 @@ const swaggerSpec = {
               },
             },
           },
+          '400': {
+            description: 'Validation error',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          '404': {
+            description: 'User not found',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
         },
       },
       delete: {
@@ -195,6 +356,70 @@ const swaggerSpec = {
                     message: { type: 'string', example: 'User deleted successfully' },
                   },
                 },
+              },
+            },
+          },
+          '404': {
+            description: 'User not found',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/profile': {
+      get: {
+        summary: 'Get the authenticated user profile',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'Current user',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiResponseUser' },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/admin/users': {
+      get: {
+        summary: 'Admin-only list of users',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'List of users',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiResponseUsers' },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
+              },
+            },
+          },
+          '403': {
+            description: 'Forbidden',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' },
               },
             },
           },
