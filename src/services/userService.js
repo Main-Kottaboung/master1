@@ -39,7 +39,9 @@ async function createUser(payload, options = {}) {
   }
 
   const data = { name, email, role };
-  if (options.storePassword && password) data.password = password;
+  if (options.storePassword && password) {
+    data.password = password;
+  }
 
   const created = await userRepository.create(data);
   return sanitize(created);
@@ -57,7 +59,10 @@ async function updateUser(id, payload) {
     if (existing) throw new ApiError(409, 'Email already in use');
   }
 
-  const updated = await userRepository.update(id, payload);
+  // Remove password from payload - password should not be updatable through regular update endpoint
+  const { password, ...updateData } = payload;
+
+  const updated = await userRepository.update(id, updateData);
   if (!updated) throw new ApiError(404, 'User not found');
   return sanitize(updated);
 }

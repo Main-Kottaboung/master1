@@ -70,6 +70,7 @@ const swaggerSpec = {
         properties: {
           name: { type: 'string', example: 'Jane Doe' },
           email: { type: 'string', example: 'jane@example.com' },
+          password: { type: 'string', example: 'optional_password123' },
           role: { type: 'string', enum: ['user', 'admin'], example: 'user' },
         },
       },
@@ -78,6 +79,7 @@ const swaggerSpec = {
         properties: {
           name: { type: 'string', example: 'Jane Doe' },
           email: { type: 'string', example: 'jane@example.com' },
+          password: { type: 'string', example: 'new_password123' },
           role: { type: 'string', enum: ['user', 'admin'], example: 'admin' },
         },
       },
