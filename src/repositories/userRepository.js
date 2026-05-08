@@ -1,45 +1,40 @@
-const users = require('../database/userDatabase');
+const { PrismaClient } = require('@prisma/client');
 
-function findAll() {
-  return users;
+const prisma = new PrismaClient();
+
+async function findAll() {
+  return prisma.user.findMany();
 }
 
-function findById(id) {
+async function findById(id) {
   const userId = Number(id);
-  return users.find((user) => user.id === userId) || null;
+  return prisma.user.findUnique({ where: { id: userId } });
 }
 
-function findByEmail(email) {
-  return users.find((user) => user.email === email) || null;
+async function findByEmail(email) {
+  return prisma.user.findUnique({ where: { email } });
 }
 
-function create(user) {
-  users.push(user);
-  return user;
+async function create(user) {
+  return prisma.user.create({ data: user });
 }
 
-function update(id, nextUser) {
+async function update(id, nextUser) {
   const userId = Number(id);
-  const userIndex = users.findIndex((user) => user.id === userId);
-
-  if (userIndex === -1) {
+  try {
+    return await prisma.user.update({ where: { id: userId }, data: nextUser });
+  } catch (err) {
     return null;
   }
-
-  users[userIndex] = nextUser;
-  return users[userIndex];
 }
 
-function remove(id) {
+async function remove(id) {
   const userId = Number(id);
-  const userIndex = users.findIndex((user) => user.id === userId);
-
-  if (userIndex === -1) {
+  try {
+    return await prisma.user.delete({ where: { id: userId } });
+  } catch (err) {
     return null;
   }
-
-  const [deletedUser] = users.splice(userIndex, 1);
-  return deletedUser;
 }
 
 module.exports = {

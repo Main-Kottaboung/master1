@@ -9,11 +9,11 @@ async function register({ name, email, password, role }) {
     throw new ApiError(400, 'Name, email and password are required');
   }
 
-  const existing = userService.findUserRecordByEmail(email);
+  const existing = await userService.findUserRecordByEmail(email);
   if (existing) throw new ApiError(409, 'Email already in use');
 
   const hashed = await bcrypt.hash(password, 10);
-  const user = userService.createUser({ name, email, password: hashed, role }, { storePassword: true });
+  const user = await userService.createUser({ name, email, password: hashed, role }, { storePassword: true });
 
   const token = jwt.sign({ sub: user.id }, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
 
@@ -25,7 +25,7 @@ async function login({ email, password }) {
     throw new ApiError(400, 'Email and password are required');
   }
 
-  const userRaw = userService.findUserRecordByEmail(email);
+  const userRaw = await userService.findUserRecordByEmail(email);
 
   if (!userRaw || !userRaw.password) {
     throw new ApiError(401, 'Invalid credentials');
@@ -36,7 +36,7 @@ async function login({ email, password }) {
 
   const token = jwt.sign({ sub: userRaw.id }, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
 
-  const user = userService.getUserById(userRaw.id);
+  const user = await userService.getUserById(userRaw.id);
   return { user, token };
 }
 
