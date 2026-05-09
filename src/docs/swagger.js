@@ -124,29 +124,7 @@ const swaggerSpec = {
         },
       },
     },
-    '/api/echo': {
-      post: {
-        summary: 'Echo payload',
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: { type: 'object' },
-            },
-          },
-        },
-        responses: {
-          '200': {
-            description: 'Echoed payload',
-            content: {
-              'application/json': {
-                schema: { type: 'object' },
-              },
-            },
-          },
-        },
-      },
-    },
+
     '/api/auth/register': {
       post: {
         summary: 'Register a user',
