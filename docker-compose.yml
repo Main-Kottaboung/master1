@@ -1,32 +1,40 @@
+version: '3.8'
+
 services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: master1
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   app:
     build: .
+    image: master1_app:dev
     ports:
       - "3000:3000"
     env_file:
       - .env
     environment:
-      PORT: 3000
       NODE_ENV: development
-      DATABASE_URL: postgres://postgres:postgres@db:5432/master1
-      DATABASE_NAME: master1
-      DATABASE_DIALECT: postgres
-      JWT_SECRET: change-me-in-production
-      JWT_EXPIRES_IN: 1h
-    depends_on:
-      - db
-
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: master1
-    ports:
-      - "5432:5432"
+      DATABASE_URL: mysql://root:root1234@db:3306/master1
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./:/app:cached
+      - /app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+    # Run Prisma db push (create schema) then start dev server with hot reload
+    command: sh -c "npx prisma db push && npm run dev"
 
 volumes:
-  postgres_data:
+  mysql_data:

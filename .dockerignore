@@ -1,5 +1,16 @@
 node_modules
 npm-debug.log
+.env
+.env.*
+.git
+.gitignore
+dist
+build
+coverage
+logs
+*.log
+docker-compose.override.ymlnode_modules
+npm-debug.log
 Dockerfile
 docker-compose.yml
 .git
