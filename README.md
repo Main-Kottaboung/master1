@@ -8,24 +8,58 @@ This project is a minimal, production-ready Express structure demonstrating:
 - Centralized error handling with `ApiError` and an error middleware.
 - Security and logging middleware: `helmet`, `cors`, `morgan`.
 - OpenAPI docs at `/api-docs` (Swagger UI).
-- User CRUD with an in-memory mock database (`src/database/userDatabase.js`).
+- Prisma ORM with MySQL database.
 - Authentication: registration and login using `bcryptjs` and JWT (`jsonwebtoken`).
-- Role-based authorization (admin/user) with middleware and an admin-only route.
+- Role-based authorization (admin/user) with reusable middleware patterns.
+- Docker support with hot reload for development.
 
 ## Project structure
 
 ```
 src/
-	├─ app.js                 # Express app, middleware, routes mount
-	├─ index.js               # Server bootstrap
-	├─ config/                # dotenv bootstrap and config values
-	├─ routes/                # route definitions (auth, users, admin, profile, etc.)
-	├─ controllers/           # route handlers
-	├─ services/              # business logic (users, auth)
-	├─ middlewares/           # auth, authorize, error handling
-	├─ database/              # mock in-memory DB (for demos)
-	└─ docs/                  # OpenAPI spec used by Swagger UI
+	├─ app.js                      # Express app, middleware, routes mount
+	├─ index.js                    # Server bootstrap
+	├─ config/                     # dotenv bootstrap and config values
+	├─ routes/                     # route definitions (auth, users, admin, profile, etc.)
+	├─ controllers/                # route handlers
+	├─ services/                   # business logic (users, auth)
+	├─ middlewares/
+	│  ├─ requireAuth.js           # JWT authentication (required)
+	│  ├─ optionalAuth.js          # JWT authentication (optional)
+	│  ├─ requireRole.js           # Role-based authorization
+	│  ├─ authMiddleware.js        # Legacy (kept for compatibility)
+	│  ├─ authorize.js             # Legacy role middleware
+	│  ├─ requestValidators.js     # Input validation
+	│  └─ errorHandler.js          # Centralized error handling
+	├─ database/                   # Prisma schema and migrations
+	└─ docs/                       # OpenAPI spec used by Swagger UI
 ```
+
+## Authentication Architecture
+
+**Route Protection Levels:**
+
+| Route | Method | Protection | Middleware |
+|-------|--------|-----------|-----------|
+| `/api/auth/register` | POST | Public | validateRegister |
+| `/api/auth/login` | POST | Public | validateLogin |
+| `/api/profile` | GET | Protected | requireAuth |
+| `/api/users/*` | * | Public (consider protecting) | — |
+| `/api/admin/users` | GET | Admin Only | requireAuth + requireRole('admin') |
+
+**Middleware Pattern:**
+```javascript
+// Public route (no middleware)
+router.post('/login', validateLogin, authController.login);
+
+// Protected route (requires authentication)
+router.get('/profile', requireAuth, profileHandler);
+
+// Admin route (requires auth + role)
+router.get('/admin/users', requireAuth, requireRole('admin'), adminHandler);
+```
+
+See `AUTHENTICATION.md` for detailed middleware documentation and usage examples.
 
 ## Quick start
 
@@ -35,7 +69,7 @@ src/
 npm install
 ```
 
-2. Copy `.env.example` to `.env` and set values (at minimum `JWT_SECRET`).
+2. Copy `.env.example` to `.env` and set values (at minimum `JWT_SECRET`, `DATABASE_URL`).
 
 3. Run in development:
 
