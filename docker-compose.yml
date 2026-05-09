@@ -8,7 +8,7 @@ services:
       MYSQL_ROOT_PASSWORD: root1234
       MYSQL_DATABASE: master1
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -18,7 +18,9 @@ services:
       retries: 5
 
   app:
-    build: .
+    build:
+      context: .
+      target: dev
     image: master1_app:dev
     ports:
       - "3000:3000"
@@ -34,7 +36,7 @@ services:
       db:
         condition: service_healthy
     # Run Prisma db push (create schema) then start dev server with hot reload
-    command: sh -c "npx prisma db push && npm run dev"
+    command: sh -c "npx prisma db push --skip-generate && npm run dev"
 
 volumes:
   mysql_data:

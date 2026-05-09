@@ -1,38 +1,34 @@
 ## Multi-stage Dockerfile
-# - builds Prisma client during image build
-# - supports mounting source for local dev (via docker-compose) and running `npm run dev`
+# Two targets:
+#   - dev (default): includes all deps for nodemon & hot reload
+#   - prod: pruned for production
 
-FROM node:18-alpine AS deps
+FROM node:18-alpine AS base
 WORKDIR /app
 COPY package.json package-lock.json* ./
+
+FROM base AS deps
 RUN npm ci
 
-FROM node:18-alpine AS builder
+FROM base AS deps-prod
+RUN npm ci --omit=dev
+
+FROM node:18-alpine AS dev
 WORKDIR /app
+ENV NODE_ENV=development
 COPY --from=deps /app/node_modules ./node_modules
 COPY . ./
-# Generate Prisma client at build time (safe when DATABASE_URL is available at build or ignored)
+# Generate Prisma client for development
 RUN npx prisma generate || true
+EXPOSE 3000
+CMD ["npm", "run", "dev"]
 
 FROM node:18-alpine AS prod
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=builder /app .
-# remove dev deps to keep image small
-RUN npm prune --production || true
+COPY --from=deps-prod /app/node_modules ./node_modules
+COPY . ./
+# Generate Prisma client for production
+RUN npx prisma generate || true
 EXPOSE 3000
 CMD ["node", "src/index.js"]
-
-# Notes:
-# - For local dev with hot reload, use docker-compose with a bind mount and override command to `npm run dev`.FROM node:20-alpine
-
-WORKDIR /usr/src/app
-
-COPY package*.json ./
-RUN npm install --omit=dev
-
-COPY . .
-
-EXPOSE 3000
-
-CMD ["npm", "start"]
