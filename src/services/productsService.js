@@ -23,14 +23,41 @@ async function listProducts(options = {}) {
     ];
   }
 
-  if (category) {
-    // allow category to be slug or id
-    if (Number.isInteger(Number(category))) {
-      where.categoryId = Number(category);
+//   if (category) {
+//     // allow category to be slug or id
+//     if (Number.isInteger(Number(category))) {
+//       where.categoryId = Number(category);
+//     } else {
+//       where.category = { slug: category };
+//     }
+//   }
+
+    if (category) {
+    const normalizedCategory = String(category).trim();
+
+    if (!isNaN(Number(normalizedCategory))) {
+        where.categoryId = Number(normalizedCategory);
     } else {
-      where.category = { slug: category };
+        where.category = {
+        is: {
+            OR: [
+            {
+                slug: normalizedCategory.toLowerCase(),
+            },
+            {
+                name: {
+                equals: normalizedCategory,
+                mode: 'insensitive',
+                },
+            },
+            ],
+        },
+        };
     }
-  }
+
+    console.log('CATEGORY:', category);
+    console.log('WHERE:', JSON.stringify(where, null, 2));
+    }
 
   if (minPrice !== undefined || maxPrice !== undefined) {
     where.AND = [];
