@@ -2,6 +2,7 @@ const Router = require('express').Router;
 const requireAuth = require('../middlewares/requireAuth');
 const requireRole = require('../middlewares/requireRole');
 const userService = require('../services/userService');
+const adminOrderRoutes = require('./adminOrderRoutes');
 
 const router = Router();
 
@@ -20,5 +21,8 @@ router.get('/users', requireAuth, requireRole('admin'), async (req, res, next) =
     next(err);
   }
 });
+
+// Mount admin order routes at /api/admin/orders
+router.use('/orders', adminOrderRoutes);
 
 module.exports = router;
