@@ -373,6 +373,110 @@ const swaggerSpec = {
         type: 'object',
         properties: { data: { type: 'array', items: { $ref: '#/components/schemas/Order' } } },
       },
+      AdminUser: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 5 },
+          name: { type: 'string', example: 'Jane Doe' },
+          email: { type: 'string', example: 'jane@example.com' },
+        },
+      },
+      AdminOrderWithUser: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 1000 },
+          userId: { type: 'integer', example: 5 },
+          user: { $ref: '#/components/schemas/AdminUser' },
+          status: { type: 'string', enum: ['pending', 'paid', 'shipped', 'completed', 'cancelled'], example: 'pending' },
+          totalAmount: { type: 'number', format: 'float', example: 39.98 },
+          totalQuantity: { type: 'integer', example: 2 },
+          items: { type: 'array', items: { $ref: '#/components/schemas/OrderItem' } },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      UpdateOrderStatusRequest: {
+        type: 'object',
+        required: ['status'],
+        properties: {
+          status: {
+            type: 'string',
+            enum: ['pending', 'paid', 'shipped', 'completed', 'cancelled'],
+            example: 'paid',
+          },
+        },
+      },
+      AdminOrderMeta: {
+        type: 'object',
+        properties: {
+          page: { type: 'integer', example: 1 },
+          limit: { type: 'integer', example: 20 },
+          total: { type: 'integer', example: 45 },
+          pages: { type: 'integer', example: 3 },
+          pending: { type: 'integer', example: 10 },
+          paid: { type: 'integer', example: 15 },
+          shipped: { type: 'integer', example: 12 },
+          completed: { type: 'integer', example: 8 },
+          cancelled: { type: 'integer', example: 0 },
+        },
+      },
+      AdminOrdersListResponse: {
+        type: 'object',
+        properties: {
+          data: { type: 'array', items: { $ref: '#/components/schemas/AdminOrderWithUser' } },
+          meta: { $ref: '#/components/schemas/AdminOrderMeta' },
+        },
+      },
+      OrderBreakdown: {
+        type: 'object',
+        properties: {
+          count: { type: 'integer', example: 15 },
+          revenue: { type: 'number', format: 'float', example: 1299.85 },
+        },
+      },
+      OrderStatisticsResponse: {
+        type: 'object',
+        properties: {
+          totalOrders: { type: 'integer', example: 45 },
+          totalRevenue: { type: 'number', format: 'float', example: 4599.99 },
+          avgOrderValue: { type: 'number', format: 'float', example: 102.22 },
+          breakdown: {
+            type: 'object',
+            properties: {
+              pending: { $ref: '#/components/schemas/OrderBreakdown' },
+              paid: { $ref: '#/components/schemas/OrderBreakdown' },
+              shipped: { $ref: '#/components/schemas/OrderBreakdown' },
+              completed: { $ref: '#/components/schemas/OrderBreakdown' },
+              cancelled: { $ref: '#/components/schemas/OrderBreakdown' },
+            },
+          },
+          recentOrders: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'integer', example: 1000 },
+                email: { type: 'string', example: 'jane@example.com' },
+                status: { type: 'string', example: 'paid' },
+                totalAmount: { type: 'number', format: 'float', example: 59.99 },
+                createdAt: { type: 'string', format: 'date-time' },
+              },
+            },
+          },
+        },
+      },
+      ApiResponseAdminOrder: {
+        type: 'object',
+        properties: { data: { $ref: '#/components/schemas/AdminOrderWithUser' } },
+      },
+      ApiResponseAdminOrdersList: {
+        type: 'object',
+        properties: { data: { $ref: '#/components/schemas/AdminOrdersListResponse' } },
+      },
+      ApiResponseOrderStatistics: {
+        type: 'object',
+        properties: { data: { $ref: '#/components/schemas/OrderStatisticsResponse' } },
+      },
     },
   },
   paths: {
@@ -898,6 +1002,79 @@ const swaggerSpec = {
           '200': { description: 'Order', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiResponseOrder' } } } },
           '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
           '404': { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+    },
+    '/api/admin/orders': {
+      get: {
+        summary: 'Admin: List all orders (with filtering, sorting, pagination)',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer' }, description: 'Page number (default: 1)' },
+          { name: 'limit', in: 'query', schema: { type: 'integer' }, description: 'Items per page (default: 20, max: 100)' },
+          { name: 'status', in: 'query', schema: { type: 'string', enum: ['all', 'pending', 'paid', 'shipped', 'completed', 'cancelled'] }, description: 'Filter by status' },
+          { name: 'userId', in: 'query', schema: { type: 'integer' }, description: 'Filter by user ID' },
+          { name: 'search', in: 'query', schema: { type: 'string' }, description: 'Search by order ID or user email' },
+          { name: 'sortBy', in: 'query', schema: { type: 'string', enum: ['createdAt', 'totalAmount', 'status'] }, description: 'Sort field (default: createdAt)' },
+          { name: 'sortDir', in: 'query', schema: { type: 'string', enum: ['asc', 'desc'] }, description: 'Sort direction (default: desc)' },
+        ],
+        responses: {
+          '200': {
+            description: 'Paginated list of orders with status counts',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiResponseAdminOrdersList' } } },
+          },
+          '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '403': { description: 'Forbidden (admin only)', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+    },
+    '/api/admin/orders/{id}': {
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      get: {
+        summary: 'Admin: Get order details',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': { description: 'Order with user info', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiResponseAdminOrder' } } } },
+          '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '403': { description: 'Forbidden (admin only)', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '404': { description: 'Order not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+    },
+    '/api/admin/orders/{id}/status': {
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      put: {
+        summary: 'Admin: Update order status (with state machine validation)',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/UpdateOrderStatusRequest' },
+              example: { status: 'paid' },
+            },
+          },
+        },
+        responses: {
+          '200': { description: 'Status updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiResponseAdminOrder' } } } },
+          '400': { description: 'Invalid status or transition', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '403': { description: 'Forbidden (admin only)', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '404': { description: 'Order not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+    },
+    '/api/admin/orders/stats/overview': {
+      get: {
+        summary: 'Admin: Get order statistics for dashboard',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'Order statistics and metrics',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiResponseOrderStatistics' } } },
+          },
+          '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '403': { description: 'Forbidden (admin only)', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
         },
       },
     },
