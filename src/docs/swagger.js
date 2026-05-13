@@ -207,6 +207,66 @@ const swaggerSpec = {
           },
         },
       },
+      CartItemProduct: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 10 },
+          title: { type: 'string', example: 'Basic Tee' },
+          slug: { type: 'string', example: 'basic-tee' },
+          price: { type: 'number', format: 'float', example: 19.99 },
+          stock: { type: 'integer', example: 42 },
+          images: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/ProductImage' },
+          },
+        },
+      },
+      CartItem: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 100 },
+          quantity: { type: 'integer', example: 2 },
+          subtotal: { type: 'number', format: 'float', example: 39.98 },
+          product: { $ref: '#/components/schemas/CartItemProduct' },
+        },
+      },
+      Cart: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 1 },
+          userId: { type: 'integer', example: 5 },
+          items: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/CartItem' },
+          },
+          totalQuantity: { type: 'integer', example: 2 },
+          total: { type: 'number', format: 'float', example: 39.98 },
+          itemCount: { type: 'integer', example: 1 },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      AddCartItemRequest: {
+        type: 'object',
+        required: ['productId'],
+        properties: {
+          productId: { type: 'integer', example: 10 },
+          quantity: { type: 'integer', example: 1 },
+        },
+      },
+      UpdateCartItemRequest: {
+        type: 'object',
+        required: ['quantity'],
+        properties: {
+          quantity: { type: 'integer', example: 3 },
+        },
+      },
+      ApiResponseCart: {
+        type: 'object',
+        properties: {
+          data: { $ref: '#/components/schemas/Cart' },
+        },
+      },
     },
   },
   paths: {
@@ -594,6 +654,99 @@ const swaggerSpec = {
           '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
           '403': { description: 'Forbidden', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
           '404': { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+    },
+    '/api/cart': {
+      get: {
+        summary: 'Get authenticated user cart',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'Current cart',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiResponseCart' },
+              },
+            },
+          },
+          '401': {
+            description: 'Unauthorized',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } },
+          },
+        },
+      },
+    },
+    '/api/cart/items': {
+      post: {
+        summary: 'Add product to cart or increment quantity',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/AddCartItemRequest' },
+            },
+          },
+        },
+        responses: {
+          '201': {
+            description: 'Cart updated',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiResponseCart' },
+              },
+            },
+          },
+          '400': { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '404': { description: 'Product not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '409': { description: 'Stock conflict', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+    },
+    '/api/cart/items/{id}': {
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      put: {
+        summary: 'Update cart item quantity',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/UpdateCartItemRequest' },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Cart updated',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiResponseCart' },
+              },
+            },
+          },
+          '400': { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '404': { description: 'Cart item not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '409': { description: 'Stock conflict', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+      delete: {
+        summary: 'Remove a cart item',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': {
+            description: 'Cart updated',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiResponseCart' },
+              },
+            },
+          },
+          '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '404': { description: 'Cart item not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
         },
       },
     },

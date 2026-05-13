@@ -18,6 +18,7 @@ model User {
   email     String   @unique
   password  String?
   role      String   @default("user")
+  cart      Cart?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -42,6 +43,7 @@ model Product {
   category    Category?      @relation(fields: [categoryId], references: [id])
   categoryId  Int?
   images      ProductImage[]
+  cartItems   CartItem[]
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
@@ -57,4 +59,30 @@ model ProductImage {
   product   Product  @relation(fields: [productId], references: [id])
   productId Int
   createdAt DateTime @default(now())
+}
+
+model Cart {
+  id        Int        @id @default(autoincrement())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int        @unique
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([userId])
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartId    Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId Int
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId])
+  @@index([cartId])
+  @@index([productId])
 }

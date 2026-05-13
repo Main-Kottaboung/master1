@@ -6,6 +6,7 @@ const profileRoutes = require('./profileRoutes');
 const adminRoutes = require('./adminRoutes');
 const productsRoutes = require('./productsRoutes');
 const categoriesRoutes = require('./categoriesRoutes');
+const cartRoutes = require('./cartRoutes');
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/profile', profileRoutes);
 router.use('/admin', adminRoutes);
 router.use('/products', productsRoutes);
 router.use('/categories', categoriesRoutes);
+router.use('/cart', cartRoutes);
 
 module.exports = router;
