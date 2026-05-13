@@ -340,6 +340,39 @@ const swaggerSpec = {
           data: { $ref: '#/components/schemas/Cart' },
         },
       },
+      OrderItem: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 1 },
+          productId: { type: 'integer', example: 10 },
+          snapshotTitle: { type: 'string', example: 'Basic Tee' },
+          snapshotPrice: { type: 'number', format: 'float', example: 19.99 },
+          quantity: { type: 'integer', example: 2 },
+          subtotal: { type: 'number', format: 'float', example: 39.98 },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      Order: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer', example: 1000 },
+          userId: { type: 'integer', example: 5 },
+          status: { type: 'string', example: 'pending' },
+          totalAmount: { type: 'number', format: 'float', example: 39.98 },
+          totalQuantity: { type: 'integer', example: 2 },
+          items: { type: 'array', items: { $ref: '#/components/schemas/OrderItem' } },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      ApiResponseOrder: {
+        type: 'object',
+        properties: { data: { $ref: '#/components/schemas/Order' } },
+      },
+      ApiResponseOrders: {
+        type: 'object',
+        properties: { data: { type: 'array', items: { $ref: '#/components/schemas/Order' } } },
+      },
     },
   },
   paths: {
@@ -830,6 +863,41 @@ const swaggerSpec = {
           },
           '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
           '404': { description: 'Cart item not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+    },
+    '/api/orders': {
+      post: {
+        summary: 'Create an order from the authenticated user cart',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '201': {
+            description: 'Order created',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiResponseOrder' } } },
+          },
+          '400': { description: 'Bad request / empty cart', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '409': { description: 'Stock conflict', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+      get: {
+        summary: 'List orders for the authenticated user',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': { description: 'List of orders', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiResponseOrders' } } } },
+          '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+        },
+      },
+    },
+    '/api/orders/{id}': {
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      get: {
+        summary: 'Get a specific order for the authenticated user',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          '200': { description: 'Order', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiResponseOrder' } } } },
+          '401': { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          '404': { description: 'Not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
         },
       },
     },
