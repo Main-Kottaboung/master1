@@ -209,6 +209,21 @@ const swaggerSpec = {
       },
       CartItemProduct: {
         type: 'object',
+        example: {
+          id: 10,
+          title: 'Basic Tee',
+          slug: 'basic-tee',
+          price: 19.99,
+          stock: 42,
+          images: [
+            {
+              id: 1,
+              url: 'https://cdn.example.com/img1.jpg',
+              altText: 'Front view',
+              sortOrder: 0,
+            },
+          ],
+        },
         properties: {
           id: { type: 'integer', example: 10 },
           title: { type: 'string', example: 'Basic Tee' },
@@ -223,6 +238,26 @@ const swaggerSpec = {
       },
       CartItem: {
         type: 'object',
+        example: {
+          id: 100,
+          quantity: 2,
+          subtotal: 39.98,
+          product: {
+            id: 10,
+            title: 'Basic Tee',
+            slug: 'basic-tee',
+            price: 19.99,
+            stock: 42,
+            images: [
+              {
+                id: 1,
+                url: 'https://cdn.example.com/img1.jpg',
+                altText: 'Front view',
+                sortOrder: 0,
+              },
+            ],
+          },
+        },
         properties: {
           id: { type: 'integer', example: 100 },
           quantity: { type: 'integer', example: 2 },
@@ -232,6 +267,37 @@ const swaggerSpec = {
       },
       Cart: {
         type: 'object',
+        example: {
+          id: 1,
+          userId: 5,
+          items: [
+            {
+              id: 100,
+              quantity: 2,
+              subtotal: 39.98,
+              product: {
+                id: 10,
+                title: 'Basic Tee',
+                slug: 'basic-tee',
+                price: 19.99,
+                stock: 42,
+                images: [
+                  {
+                    id: 1,
+                    url: 'https://cdn.example.com/img1.jpg',
+                    altText: 'Front view',
+                    sortOrder: 0,
+                  },
+                ],
+              },
+            },
+          ],
+          totalQuantity: 2,
+          total: 39.98,
+          itemCount: 1,
+          createdAt: '2026-05-13T07:50:12.000Z',
+          updatedAt: '2026-05-13T07:50:12.000Z',
+        },
         properties: {
           id: { type: 'integer', example: 1 },
           userId: { type: 'integer', example: 5 },
@@ -249,6 +315,10 @@ const swaggerSpec = {
       AddCartItemRequest: {
         type: 'object',
         required: ['productId'],
+        example: {
+          productId: 10,
+          quantity: 1,
+        },
         properties: {
           productId: { type: 'integer', example: 10 },
           quantity: { type: 'integer', example: 1 },
@@ -257,6 +327,9 @@ const swaggerSpec = {
       UpdateCartItemRequest: {
         type: 'object',
         required: ['quantity'],
+        example: {
+          quantity: 3,
+        },
         properties: {
           quantity: { type: 'integer', example: 3 },
         },
@@ -661,6 +734,7 @@ const swaggerSpec = {
       get: {
         summary: 'Get authenticated user cart',
         security: [{ bearerAuth: [] }],
+        description: 'Returns the active cart for the authenticated user, creating an empty one if needed.',
         responses: {
           '200': {
             description: 'Current cart',
@@ -681,11 +755,16 @@ const swaggerSpec = {
       post: {
         summary: 'Add product to cart or increment quantity',
         security: [{ bearerAuth: [] }],
+        description: 'If the product already exists in the cart, the quantity is incremented instead of creating a duplicate row.',
         requestBody: {
           required: true,
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/AddCartItemRequest' },
+              example: {
+                productId: 10,
+                quantity: 1,
+              },
             },
           },
         },
@@ -710,11 +789,15 @@ const swaggerSpec = {
       put: {
         summary: 'Update cart item quantity',
         security: [{ bearerAuth: [] }],
+        description: 'Replaces the quantity for the selected cart item after stock validation.',
         requestBody: {
           required: true,
           content: {
             'application/json': {
               schema: { $ref: '#/components/schemas/UpdateCartItemRequest' },
+              example: {
+                quantity: 3,
+              },
             },
           },
         },
