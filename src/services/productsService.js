@@ -18,51 +18,49 @@ async function listProducts(options = {}) {
 
   if (q) {
     where.OR = [
-      { title: { contains: q, mode: 'insensitive' } },
-      { description: { contains: q, mode: 'insensitive' } },
+      { title: { contains: q } },
+      { description: { contains: q } },
     ];
   }
 
-//   if (category) {
-//     // allow category to be slug or id
-//     if (Number.isInteger(Number(category))) {
-//       where.categoryId = Number(category);
-//     } else {
-//       where.category = { slug: category };
-//     }
-//   }
-
-    if (category) {
+  if (category) {
     const normalizedCategory = String(category).trim();
 
     if (!isNaN(Number(normalizedCategory))) {
-        where.categoryId = Number(normalizedCategory);
+      where.categoryId = Number(normalizedCategory);
     } else {
-        where.category = {
+      where.category = {
         is: {
-            OR: [
+          OR: [
             {
-                slug: normalizedCategory.toLowerCase(),
+              slug: normalizedCategory.toLowerCase(),
             },
             {
-                name: {
-                equals: normalizedCategory,
-                mode: 'insensitive',
-                },
+              name: normalizedCategory,
             },
-            ],
+          ],
         },
-        };
+      };
     }
 
     console.log('CATEGORY:', category);
     console.log('WHERE:', JSON.stringify(where, null, 2));
-    }
+  }
 
   if (minPrice !== undefined || maxPrice !== undefined) {
     where.AND = [];
-    if (minPrice !== undefined) where.AND.push({ price: { gte: Number(minPrice) } });
-    if (maxPrice !== undefined) where.AND.push({ price: { lte: Number(maxPrice) } });
+
+    if (minPrice !== undefined) {
+      where.AND.push({
+        price: { gte: Number(minPrice) },
+      });
+    }
+
+    if (maxPrice !== undefined) {
+      where.AND.push({
+        price: { lte: Number(maxPrice) },
+      });
+    }
   }
 
   const take = Math.min(100, Number(limit) || 20);
@@ -73,9 +71,15 @@ async function listProducts(options = {}) {
       where,
       skip,
       take,
-      orderBy: { [sort]: order },
-      include: { images: true, category: true },
+      orderBy: {
+        [sort]: order,
+      },
+      include: {
+        images: true,
+        category: true,
+      },
     }),
+
     prisma.product.count({ where }),
   ]);
 
